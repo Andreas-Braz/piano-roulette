@@ -49,3 +49,21 @@ with check (
 
 -- Optional: keep email confirmation enabled for better account security.
 -- No service-role key is used in the browser. Only the anon/public key belongs in app.js.
+
+-- Allow authenticated users to access the public schema
+GRANT USAGE ON SCHEMA public TO authenticated;
+
+-- Allow authenticated users to manage their own songs
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON TABLE public.songs
+TO authenticated;
+
+-- Allow authenticated users to manage their selection history
+GRANT SELECT, INSERT, DELETE
+ON TABLE public.song_selections
+TO authenticated;
+
+-- Allow access to sequences, if any are used
+GRANT USAGE, SELECT
+ON ALL SEQUENCES IN SCHEMA public
+TO authenticated;
