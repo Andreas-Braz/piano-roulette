@@ -2,8 +2,8 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // Add your Supabase project URL and anon/public key here.
 // Supabase Dashboard -> Project Settings -> API.
-const SUPABASE_URL = "YOUR_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+const SUPABASE_URL = "https://mepvoeixesnfchlfessc.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_g9-QIOXPDJJy0dLk5WSISg_u1zKmWPW";
 
 const $ = (id) => document.getElementById(id);
 const supabaseConfigured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_") && !SUPABASE_ANON_KEY.includes("YOUR_");
@@ -13,6 +13,7 @@ let currentUser = null;
 let songs = [];
 let selections = [];
 let toastTimer;
+let showCompletionMessage = false;
 
 function toast(message) {
   $("toast").textContent = message;
@@ -51,22 +52,47 @@ async function loadData() {
 }
 function render() {
   const selectedIds = new Set(selections.map(s => s.song_id));
-  const total = songs.length, played = selectedIds.size, remaining = Math.max(0, total - played);
+  const total = songs.length;
+  const played = selectedIds.size;
+  const remaining = Math.max(0, total - played);
+
   $("stat-total").textContent = total;
   $("stat-played").textContent = played;
   $("stat-remaining").textContent = remaining;
   $("remaining-pill").textContent = `${remaining} remaining`;
+
   const progress = total ? Math.round(played / total * 100) : 0;
   $("progress-text").textContent = `${progress}%`;
   $("progress-bar").style.width = `${progress}%`;
+
   renderLibrary();
   renderBookStats(selectedIds);
-  $("pick-btn").disabled = remaining === 0;
+
+  // Enable the button until the user has acknowledged completion.
+  $("pick-btn").disabled =
+    !songs.length || (remaining === 0 && showCompletionMessage);
+
   if (!songs.length) {
-    $("song-display").innerHTML = `<div class="empty-note"><div class="music-mark">♫</div><h3>Your playlist starts here</h3><p>Add songs to your library, then pick your first random song.</p></div>`;
-  } else if (remaining === 0) {
-    $("song-display").innerHTML = `<div class="empty-note"><div class="music-mark">✓</div><h3>You've played them all!</h3><p>You selected every song in your collection. Reset the round whenever you're ready for another one.</p></div>`;
-    setMessage("picker-message", "You played all the songs available. Reset your selection to start again.", "success");
+    $("song-display").innerHTML = `
+      <div class="empty-note">
+        <div class="music-mark">♫</div>
+        <h3>Your playlist starts here</h3>
+        <p>Add songs to your library, then pick your first random song.</p>
+      </div>`;
+  } else if (showCompletionMessage && remaining === 0) {
+    $("song-display").innerHTML = `
+      <div class="empty-note">
+        <div class="music-mark">✓</div>
+        <h3>You've played them all!</h3>
+        <p>You selected every song in your collection.
+        Reset the round whenever you're ready for another one.</p>
+      </div>`;
+
+    setMessage(
+      "picker-message",
+      "You played all the songs available. Reset your selection to start again.",
+      "success"
+    );
   }
 }
 function renderLibrary() {
@@ -99,23 +125,64 @@ function renderBookStats(selectedIds) {
 }
 async function pickSong() {
   setMessage("picker-message");
-  const selectedIds = new Set(selections.map(s=>s.song_id));
-  const available = songs.filter(s=>!selectedIds.has(s.id));
-  if (!available.length) { render(); return; }
-  const song = available[Math.floor(Math.random()*available.length)];
-  const { error } = await supabase.from("song_selections").insert({song_id:song.id});
+
+  const selectedIds = new Set(selections.map(s => s.song_id));
+  const available = songs.filter(s => !selectedIds.has(s.id));
+
+  // Show completion only when the user clicks
+  // after every song has already been selected.
+  if (!available.length) {
+    showCompletionMessage = true;
+    render();
+    return;
+  }
+
+  showCompletionMessage = false;
+
+  // Select a random song from the remaining songs.
+  const song = available[Math.floor(Math.random() * available.length)];
+
+  const { error } = await supabase
+    .from("song_selections")
+    .insert({ song_id: song.id });
+
   if (error) {
     if (error.code === "23505") {
       await loadData();
-      setMessage("picker-message", "Another device selected a song at the same time. Try again.", "error");
+      setMessage(
+        "picker-message",
+        "Another device selected a song at the same time. Try again.",
+        "error"
+      );
       return;
     }
-    setMessage("picker-message", error.message, "error"); return;
+
+    setMessage("picker-message", error.message, "error");
+    return;
   }
-  selections.push({song_id:song.id,selected_at:new Date().toISOString()});
-  $("song-display").innerHTML = `<div class="song-result"><div class="result-label">✦ Your randomly selected song</div><h3>${escapeHtml(song.title)}</h3><div class="artist">${escapeHtml(song.artist || "Unknown artist")}</div><div class="song-meta"><span>▤ ${escapeHtml(song.book)}</span><span>№ ${escapeHtml(song.number || "—")}</span></div></div>`;
+
+  selections.push({
+    song_id: song.id,
+    selected_at: new Date().toISOString()
+  });
+
+  showCompletionMessage = false;
+
+  // Display the selected song.
+  $("song-display").innerHTML = `
+    <div class="song-result">
+      <div class="result-label">✦ Your randomly selected song</div>
+      <h3>${escapeHtml(song.title)}</h3>
+      <div class="artist">
+        ${escapeHtml(song.artist || "Unknown artist")}
+      </div>
+      <div class="song-meta">
+        <span>▤ ${escapeHtml(song.book)}</span>
+        <span>№ ${escapeHtml(song.number || "—")}</span>
+      </div>
+    </div>`;
+
   render();
-  // render() only replaces the display when the round is empty.
 }
 async function resetRound() {
   if (!selections.length) { toast("Your selection is already empty."); return; }
@@ -123,6 +190,7 @@ async function resetRound() {
   const {error} = await supabase.from("song_selections").delete().not("song_id", "is", null);
   if (error) { toast(error.message); return; }
   selections = [];
+  showCompletionMessage = false;
   $("song-display").innerHTML = `<div class="empty-note"><div class="music-mark">↻</div><h3>Fresh round!</h3><p>Your whole collection is available again. Pick your next song.</p></div>`;
   setMessage("picker-message","Selection reset. Every song is available again.","success");
   render(); toast("Your selection has been reset.");
