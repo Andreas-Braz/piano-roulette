@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171923">
+  <meta name="description" content="Your personal random piano song selector.">
+  <title>Piano Roulette</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Piano Roulette home">
+        <span class="brand-icon">♫</span>
+        <span>Piano <b>Roulette</b></span>
+      </a>
+      <div class="header-actions">
+        <span id="user-label" class="user-label"></span>
+        <button id="logout-btn" class="button button-quiet hidden">Sign out</button>
+      </div>
+    </header>
+
+    <section id="auth-panel" class="auth-panel panel">
+      <div class="eyebrow">YOUR PERSONAL MUSIC DRAW</div>
+      <h1>Welcome to Piano Roulette</h1>
+      <p class="muted">Sign in to access your song collection from any device.</p>
+      <form id="auth-form" class="stack">
+        <label>Email address<input id="auth-email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+        <label>Password<input id="auth-password" type="password" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters"></label>
+        <div class="auth-buttons">
+          <button class="button button-primary" type="submit" id="login-btn">Sign in</button>
+          <button class="button button-secondary" type="button" id="signup-btn">Create account</button>
+        </div>
+      </form>
+      <p id="auth-message" class="message" role="status"></p>
+      <p class="tiny muted">Your account is private. Your songs and play history are only accessible after signing in.</p>
+    </section>
+
+    <div id="main-app" class="hidden">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">A LITTLE RANDOMNESS, A LOT OF MUSIC</div>
+          <h1>What will you<br><span>play today?</span></h1>
+          <p class="muted">One song at a time. No repeats until you reset your round.</p>
+        </div>
+        <div class="hero-note" aria-hidden="true"><span>♫</span><small>PLAY<br>SOMETHING<br>YOU LOVE</small></div>
+      </section>
+
+      <section class="selector panel">
+        <div class="section-top">
+          <div><div class="eyebrow">YOUR NEXT CHALLENGE</div><h2>Song picker</h2></div>
+          <span id="remaining-pill" class="pill">0 remaining</span>
+        </div>
+        <div id="song-display" class="song-display">
+          <div class="empty-note">
+            <div class="music-mark">♫</div>
+            <h3>Ready when you are</h3>
+            <p>Add songs to your library, then pick your first random song.</p>
+          </div>
+        </div>
+        <div class="picker-actions">
+          <button id="pick-btn" class="button button-primary button-large"> <span>✦</span> Pick a song</button>
+          <button id="reset-btn" class="button button-secondary"><span>↻</span> Reset selection</button>
+        </div>
+        <p id="picker-message" class="message" role="status"></p>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Round progress</span><strong id="progress-text">0%</strong></div>
+          <div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <article class="stat-card"><span class="stat-icon">♫</span><div><strong id="stat-total">0</strong><span>Total songs</span></div></article>
+        <article class="stat-card"><span class="stat-icon">✓</span><div><strong id="stat-played">0</strong><span>Selected this round</span></div></article>
+        <article class="stat-card"><span class="stat-icon">◷</span><div><strong id="stat-remaining">0</strong><span>Still to discover</span></div></article>
+      </section>
+
+      <section class="panel library-panel">
+        <div class="section-top library-heading">
+          <div><div class="eyebrow">YOUR COLLECTION</div><h2>My library</h2></div>
+          <button id="add-song-btn" class="button button-primary">＋ Add song</button>
+        </div>
+        <div class="toolbar">
+          <input id="search-input" type="search" placeholder="Search songs, artists or books…" aria-label="Search library">
+          <select id="book-filter" aria-label="Filter by book"><option value="">All books</option></select>
+          <button id="export-btn" class="button button-secondary button-small">Export CSV</button>
+          <label class="button button-secondary button-small file-label">Import CSV<input id="import-file" type="file" accept=".csv,text/csv"></label>
+        </div>
+        <div id="library-summary" class="muted tiny"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Song</th><th>Artist</th><th>Book</th><th>No.</th><th></th></tr></thead>
+            <tbody id="songs-table"><tr><td colspan="5" class="table-empty">Your library is empty. Add your first song.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel book-panel">
+        <div class="section-top"><div><div class="eyebrow">AT A GLANCE</div><h2>Books overview</h2></div></div>
+        <div id="book-stats" class="book-stats"><p class="muted">Your book statistics will appear here.</p></div>
+      </section>
+      <footer>Made for your next piano session <span>♫</span></footer>
+    </div>
+  </main>
+
+  <dialog id="song-dialog" class="modal">
+    <form id="song-form" method="dialog" class="stack">
+      <div class="section-top"><div><div class="eyebrow">YOUR MUSIC COLLECTION</div><h2 id="dialog-title">Add a song</h2></div><button type="button" class="icon-button" id="close-dialog" aria-label="Close">×</button></div>
+      <input id="song-id" type="hidden">
+      <label>Song title<input id="song-title" required maxlength="200" placeholder="e.g. Let It Be"></label>
+      <label>Artist<input id="song-artist" maxlength="200" placeholder="e.g. The Beatles"></label>
+      <label>Book<input id="song-book" required maxlength="200" placeholder="e.g. Rock & Pop Collection"></label>
+      <label>Number / page<input id="song-number" maxlength="50" placeholder="e.g. 12"></label>
+      <p id="song-form-message" class="message" role="status"></p>
+      <div class="modal-actions"><button type="button" id="cancel-song" class="button button-secondary">Cancel</button><button type="submit" class="button button-primary">Save song</button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

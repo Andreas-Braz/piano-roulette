@@ -1,0 +1,19 @@
+{
+  "name": "Piano Roulette",
+  "short_name": "Piano Roulette",
+  "description": "Your personal random piano song selector.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f6f9",
+  "theme_color": "#171923",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
